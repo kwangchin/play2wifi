@@ -1,0 +1,7 @@
+<service-group>
+<name replace-wildcards="yes">%h</name>
+<service>
+<type>_airplay._tcp</type>
+<port>22555</port>
+</service>
+</service-group>
