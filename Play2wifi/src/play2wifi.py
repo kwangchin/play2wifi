@@ -145,74 +145,76 @@ class Play2wifiProtocol(Protocol):
         
     def dataReceived(self, data):
         """Defines the protocol"""
-        
-        self.__xbmcserver = self.factory.serv
-        self.__xbmcport = self.factory.port
-        self.__xbmc = "http://"+self.__xbmcserver+":"+self.__xbmcport+"/xbmcCmds/"
-        self.__currentPlayingUri = self.__xbmc+"xbmcHttp?command=GetCurrentlyPlaying"
-        self.__stopCmd = self.__xbmc+"xbmcHTTP?command=Stop()"
-        self.__pauseCmd = self.__xbmc+"xbmcHTTP?command=Pause()"
-        self.__myurlopener =  MyURLOpener()
-        
-        answer = ""
-        if(data.find('Content-Location')>-1):#This contains the video URI
-            self.playMedia(data)
-            answer = "HTTP/1.1 200 OK"
-            answer += "\r\nDate: "+self.getDateTime()
-            answer += "\r\nContent-Length: 0"
-            answer += "\r\n\r\n"
-        elif(data.find('stop')>-1): #ends the conversation. Send back the current position.
-            duration, position = self.getPlayerPosition()
-            self.__myurlopener.open(self.__stopCmd)
-            content = "duration: "+duration+".360107"
-            content += "\r\nposition: "+position+".749201"
-            clength = len(bytes(content))
-            answer = "HTTP/1.1 200 OK"
-            answer += "\r\nDate: "+self.getDateTime()
-            answer += "\r\nContent-Length: "+str(clength)
-            answer +="\r\n\r\n"
-            answer += content
-        elif(data.find('GET /scrub') > -1): #gets polled every second for the actual position
-            duration, position = self.getPlayerPosition()
-            content = "duration: "+duration+".360107"
-            content += "\r\nposition: "+position+".749201"
-            clength = len(bytes(content))
-            answer = "HTTP/1.1 200 OK"
-            answer += "\r\nDate: "+self.getDateTime()
-            answer += "\r\nContent-Length: "+str(clength)
-            answer +="\r\n\r\n"
-            answer += content
-        elif(data.find('reverse')>-1): #don't know exactly what this is doing ;-)
-            answer = "HTTP/1.1 101 Switching Protocols"
-            answer += "\r\nDate: "+self.getDateTime()
-            answer += "\r\nUpgrade: PTTH/1.0"
-            answer += "\r\nConnection: Upgrade"
-            answer += "\r\n\r\n"
-        elif(data.find('POST /rate')>-1):# play is 1.000000, pause is 0.000000
-            #if(self.isPause()): #not really necessary since there is only one xbmc command
-            lasttime = self.factory.lasttime
-            now = time.time()
-            self.factory.lasttime = now 
-            if((lasttime is not None) and (now-lasttime>1)):
-                self.__mylogger.debug("Lasttime is: "+str(now-lasttime))
-                self.__myurlopener.open(self.__pauseCmd)
-            answer = "HTTP/1.1 200 OK"
-            answer += "\r\nDate: "+self.getDateTime()
-            answer += "\r\nContent-Length: 0"
-            answer += "\r\n\r\n"
-        elif(data.find('POST /scrub') > -1):#seeking on the iPad
-            self.setPlayerPosition(data)
-            answer = "HTTP/1.1 200 OK"
-            answer += "\r\nDate: "+self.getDateTime()
-            answer += "\r\nContent-Length: 0"
-            answer += "\r\n\r\n"
-        else:
-            logging.debug("got something else")
-            logging.debug(data)
+        try:
+            self.__xbmcserver = self.factory.serv
+            self.__xbmcport = self.factory.port
+            self.__xbmc = "http://"+self.__xbmcserver+":"+self.__xbmcport+"/xbmcCmds/"
+            self.__currentPlayingUri = self.__xbmc+"xbmcHttp?command=GetCurrentlyPlaying"
+            self.__stopCmd = self.__xbmc+"xbmcHTTP?command=Stop()"
+            self.__pauseCmd = self.__xbmc+"xbmcHTTP?command=Pause()"
+            self.__myurlopener =  MyURLOpener()
             
-        if(answer is not ""):
-            self.transport.write(answer)
-        else:#this case should not happen :-D
+            answer = ""
+            if(data.find('Content-Location')>-1):#This contains the video URI
+                self.playMedia(data)
+                answer = "HTTP/1.1 200 OK"
+                answer += "\r\nDate: "+self.getDateTime()
+                answer += "\r\nContent-Length: 0"
+                answer += "\r\n\r\n"
+            elif(data.find('stop')>-1): #ends the conversation. Send back the current position.
+                duration, position = self.getPlayerPosition()
+                self.__myurlopener.open(self.__stopCmd)
+                content = "duration: "+duration+".360107"
+                content += "\r\nposition: "+position+".749201"
+                clength = len(bytes(content))
+                answer = "HTTP/1.1 200 OK"
+                answer += "\r\nDate: "+self.getDateTime()
+                answer += "\r\nContent-Length: "+str(clength)
+                answer +="\r\n\r\n"
+                answer += content
+            elif(data.find('GET /scrub') > -1): #gets polled every second for the actual position
+                duration, position = self.getPlayerPosition()
+                content = "duration: "+duration+".360107"
+                content += "\r\nposition: "+position+".749201"
+                clength = len(bytes(content))
+                answer = "HTTP/1.1 200 OK"
+                answer += "\r\nDate: "+self.getDateTime()
+                answer += "\r\nContent-Length: "+str(clength)
+                answer +="\r\n\r\n"
+                answer += content
+            elif(data.find('reverse')>-1): #don't know exactly what this is doing ;-)
+                answer = "HTTP/1.1 101 Switching Protocols"
+                answer += "\r\nDate: "+self.getDateTime()
+                answer += "\r\nUpgrade: PTTH/1.0"
+                answer += "\r\nConnection: Upgrade"
+                answer += "\r\n\r\n"
+            elif(data.find('POST /rate')>-1):# play is 1.000000, pause is 0.000000
+                #if(self.isPause()): #not really necessary since there is only one xbmc command
+                lasttime = self.factory.lasttime
+                now = time.time()
+                self.factory.lasttime = now 
+                if((lasttime is not None) and (now-lasttime>1)):
+                    self.__mylogger.debug("Lasttime is: "+str(now-lasttime))
+                    self.__myurlopener.open(self.__pauseCmd)
+                answer = "HTTP/1.1 200 OK"
+                answer += "\r\nDate: "+self.getDateTime()
+                answer += "\r\nContent-Length: 0"
+                answer += "\r\n\r\n"
+            elif(data.find('POST /scrub') > -1):#seeking on the iPad
+                self.setPlayerPosition(data)
+                answer = "HTTP/1.1 200 OK"
+                answer += "\r\nDate: "+self.getDateTime()
+                answer += "\r\nContent-Length: 0"
+                answer += "\r\n\r\n"
+            else:
+                logging.debug("got something else")
+                logging.debug(data)
+                
+            if(answer is not ""):
+                self.transport.write(answer)
+            else:#this case should not happen :-D
+                self.transport.write(data)
+        except IOError:
             self.transport.write(data)
             
         
@@ -251,6 +253,8 @@ class Play2wifiProtocol(Protocol):
                 positionString = str(int(positionSplit[0])*60+int(positionSplit[1]))
         except xml.parsers.expat.ExpatError:
                 self.__mylogger.error("Could not parse current position xml")
+        except IOError:
+                self.__mylogger.error("IO EXception")
         
         return durationString, positionString
     
@@ -272,7 +276,13 @@ class Play2wifiProtocol(Protocol):
         sub2 = '\nStart-Position: '
         location = data.split(sub1)[-1].split(sub2)[0]
         self.__mylogger.debug("Found the following Media to play: "+location)
-        subprocess.call(["xbmc-send", "-a", "PlayMedia("+location+")"], cwd="./", stdout=open("/dev/null", 'w'))
+        if location.find("googlevideo") > 0:
+            url_data = urllib.urlencode(dict(url=location))
+            ret = urllib.urlopen("http://tinyurl.com/api-create.php", data=url_data).read().strip()
+            subprocess.call(["xbmc-send", "-a", "PlayMedia("+ret+")"], cwd="./", stdout=open("/dev/null", 'w'))
+        else:
+            subprocess.call(["xbmc-send", "-a", "PlayMedia("+location+")"], cwd="./", stdout=open("/dev/null", 'w'))
+
         
     def isPause(self, data):
         sub1 = '/rate?value='
